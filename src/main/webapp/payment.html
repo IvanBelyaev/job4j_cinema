@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>Оплата</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" ></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+            integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+</head>
+<body>
+<script>
+    let data;
+
+    $(document).ready(function () {
+        data = window.location.href.substr(window.location.href.indexOf("?") + 1);
+        data = JSON.parse(window.atob(data));
+        $("#order").append("<h3>Вы выбрали:</h3>");
+        data["places"].forEach(function(item, i, arr) {
+            $("#order").append("<p>ряд " + item["row"] + " место " + item["cell"] + "</p>");
+        });
+        $("#order").append("<h3>Сумма: " + data.places.length * 250 + "</h3>");
+        $("#tickets").val(data);
+    });
+
+    let addUserToData = function () {
+        let user = {};
+        user.name = $("#username").val();
+        user.phone = $("#phone").val();
+        user.email = $("#email").val();
+        data.user = user;
+    };
+
+    let validate = function() {
+        let result = true;
+        if ($("#username").val() === "") {
+            $("#usernameLabel").text("ФИО (заполните поле)").css("color", "#740000");
+            result = false;
+        } else {
+            $("#nameLabel").text("ФИО").css("color", "#000000");
+        }
+        if ($("#phone").val() === "") {
+            $("#phoneLabel").text("Номер телефона (заполните поле)").css("color", "#740000");
+            result = false;
+        } else {
+            $("#phoneLabel").text("Номер телефона").css("color", "#000000");
+        }
+        if ($("#email").val() === "") {
+            $("#emailLabel").text("E-mail (заполните поле)").css("color", "#740000");
+            result = false;
+        } else {
+            $("#emailLabel").text("E-mail").css("color", "#000000");
+        }
+        return result;
+    }
+
+    let sendData = function() {
+        if (validate()) {
+            addUserToData();
+            let dataWithUser = JSON.stringify(data);
+            $.ajax({
+                type: 'POST',
+                url: 'http://localhost:8080/job4j_cinema/payment.do',
+                data: dataWithUser,
+                dataType: 'json'
+            }).done(function (data) {
+                window.location.href = "./success.html";
+            }).fail(function (err) {
+                window.location.href = "./error.html";
+            });
+        } else {
+            return false;
+        }
+    }
+</script>
+
+<div class="container">
+    <div class="pt-3" id="order">
+
+    </div>
+    <div class="row">
+        <form>
+            <div class="form-group">
+                <label for="username" id="usernameLabel">ФИО</label>
+                <input type="text" class="form-control" id="username" placeholder="ФИО">
+            </div>
+            <div class="form-group">
+                <label for="phone" id="phoneLabel">Номер телефона</label>
+                <input type="text" class="form-control" id="phone" placeholder="Номер телефона">
+            </div>
+            <div class="form-group">
+                <label for="email" id="emailLabel">E-mail</label>
+                <input type="text" class="form-control" id="email" placeholder="Почтовый ящик">
+            </div>
+            <button type="button" class="btn btn-success" onclick="sendData()">Оплатить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" ></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+            integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+    <script>
+        let clearPlaces = function () {
+            for (let i = 1; i <= 3; i++) {
+                for (let j = 1; j <= 3; j++) {
+                    let id = '#' + i + j;
+                    if($(id).attr("disabled")) {
+                        $(id).removeAttr("disabled");
+                        $(id).removeAttr("checked");
+                    }
+                }
+            }
+        }
+
+        let redirectionToPayment = function () {
+            let tickets = { sessionId: 1, places: []};
+            for (let i = 1; i <= 3; i++) {
+                for (let j = 1; j <= 3; j++) {
+                    let id = '#' + i + j;
+                    if(!$(id).attr("disabled") && $(id).is(':checked')) {
+                        tickets.places.push({row: id.charAt(1), cell: id.charAt(2)});
+                    }
+                }
+            }
+            let data = window.btoa(JSON.stringify(tickets));
+            window.location.href = "./payment.html?" + data;
+        }
+
+        let updatePlaces = function() {
+            $.ajax({
+                type: 'POST',
+                url: 'http://localhost:8080/job4j_cinema/hall.do',
+                data: 'session_id=1',
+                dataType: 'json'
+            }).done(function (data) {
+                let tickets = JSON.parse(data['tickets']);
+                clearPlaces();
+                for (let i = 0; i < tickets.length; i++) {
+                    let id = String(tickets[i]["row"]) + tickets[i]["cell"];
+                    $('#' + id).attr('checked', 'checked').attr('disabled', 'disabled');
+
+                }
+            }).fail(function (err) {
+                alert(err);
+            });
+        }
+
+        $(document).ready(function () {
+            updatePlaces();
+            setInterval(updatePlaces, 10000);
+        });
+    </script>
+    <title>Выбор мест</title>
+</head>
+<body>
+
+<div class="container">
+    <div class="row pt-3">
+        <h4>
+            Бронирование месте на сеанс
+        </h4>
+        <table class="table table-bordered">
+            <thead>
+            <tr>
+                <th style="width: 120px;">Ряд / Место</th>
+                <th>1</th>
+                <th>2</th>
+                <th>3</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <th>1</th>
+                <td><input type="checkbox" name="place" value="11" id="11"> Ряд 1, Место 1</td>
+                <td><input type="checkbox" name="place" value="12" id="12"> Ряд 1, Место 2</td>
+                <td><input type="checkbox" name="place" value="13" id="13"> Ряд 1, Место 3</td>
+            </tr>
+            <tr>
+                <th>2</th>
+                <td><input type="checkbox" name="place" value="21" id="21"> Ряд 2, Место 1</td>
+                <td><input type="checkbox" name="place" value="22" id="22"> Ряд 2, Место 2</td>
+                <td><input type="checkbox" name="place" value="23" id="23"> Ряд 2, Место 3</td>
+            </tr>
+            <tr>
+                <th>3</th>
+                <td><input type="checkbox" name="place" value="31" id="31"> Ряд 3, Место 1</td>
+                <td><input type="checkbox" name="place" value="32" id="32"> Ряд 3, Место 2</td>
+                <td><input type="checkbox" name="place" value="33" id="33"> Ряд 3, Место 3</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="row float-right">
+        <button type="button" class="btn btn-success" onclick="redirectionToPayment()">Оплатить</button>
+    </div>
+</div>
+</body>
+</html>

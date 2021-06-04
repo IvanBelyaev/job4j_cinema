@@ -4,4 +4,22 @@
 
 <web-app>
   <display-name>Archetype Created Web Application</display-name>
+
+  <servlet>
+    <servlet-name>HallServlet</servlet-name>
+    <servlet-class>ru.job4j.cinema.servlets.HallServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>HallServlet</servlet-name>
+    <url-pattern>/hall.do</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>PaymentServlet</servlet-name>
+    <servlet-class>ru.job4j.cinema.servlets.PaymentServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>PaymentServlet</servlet-name>
+    <url-pattern>/payment.do</url-pattern>
+  </servlet-mapping>
 </web-app>

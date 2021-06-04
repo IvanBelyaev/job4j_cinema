@@ -1,0 +1,30 @@
+# используем язык java. Travis CI поддерживает другие языки тоже.
+language: java
+# используем режим обычного пользователя для сборки проекта.
+sudo: false
+
+jdk:
+  - openjdk14
+
+install:
+  - mvn install -P travis -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+
+script:
+  - mvn test -P travis -B
+
+# после выполнения сборки запустить скрипт, который будет собирать статистику по JaCoCo
+# Здесь используется сторонний сервис https://codecov.io/
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
+# Отправлять уведомление на почту gh0st84@mail.ru
+notifications:
+  email:
+    recipients:
+      - gh0st84@mail.ru
+    on_success: never # default: change
+    on_failure: always # default: always
+
+env:
+  global:
+    - CODECOV_TOKEN="a538bf2d-5b7d-4cb9-8951-a3585c9d60f5"
