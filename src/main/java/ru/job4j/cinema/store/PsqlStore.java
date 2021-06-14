@@ -3,6 +3,8 @@ package ru.job4j.cinema.store;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.job4j.cinema.exception.WrongTicketException;
+import ru.job4j.cinema.exception.WrongUserException;
 import ru.job4j.cinema.model.Ticket;
 import ru.job4j.cinema.model.User;
 
@@ -68,7 +70,40 @@ public class PsqlStore implements Store {
     }
 
     @Override
-    public void addUser(User user) {
+    public int addUser(User user) throws WrongUserException {
+        User userFromBD = findUserByEmail(user.getEmail());
+        if (userFromBD != null) {
+            if (!userFromBD.equals(user)) {
+                throw new WrongUserException("Similar user already exists");
+            }
+        } else {
+            insertUser(user);
+            userFromBD = findUserByEmail(user.getEmail());
+        }
+        return userFromBD.getId();
+    }
+
+    private User findUserByEmail(String email) {
+        User user = null;
+        try (Connection cn = pool.getConnection();
+             PreparedStatement ps = cn.prepareStatement
+                     ("SELECT * FROM account WHERE email = ?")
+        ) {
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                int id = rs.getInt("id");
+                String username = rs.getString("username");
+                String phone = rs.getString("phone");
+                user = new User(id, username, email, phone);
+            }
+        } catch (SQLException ex) {
+            logger.error("Exception in findUserByEmail()", ex);
+        }
+        return user;
+    }
+
+    private void insertUser(User user) throws WrongUserException {
         try (Connection cn = pool.getConnection();
              PreparedStatement ps = cn.prepareStatement
                      ("INSERT INTO account (username, email, phone) VALUES (?, ?, ?)")
@@ -78,31 +113,16 @@ public class PsqlStore implements Store {
             ps.setString(3, user.getPhone());
             ps.executeUpdate();
         } catch (SQLException ex) {
-            logger.error("Exception in addUser()", ex);
-        }
-    }
-
-    @Override
-    public int findUserByEmail(String email) {
-        int result = -1;
-        try (Connection cn = pool.getConnection();
-             PreparedStatement ps = cn.prepareStatement
-                     ("SELECT * FROM account WHERE email = ?")
-        ) {
-            ps.setString(1, email);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                result = rs.getInt("id");
+            if (ex.getMessage().contains("unique constraint")) {
+                throw new WrongUserException(ex);
+            } else {
+                logger.error("Exception in getTicketsForSession()", ex);
             }
-        } catch (SQLException ex) {
-            logger.error("Exception in findUserByEmail()", ex);
         }
-        return result;
     }
 
     @Override
-    public boolean addTickets(List<Ticket> tickets, int accountId) {
-        boolean result = true;
+    public void addTickets(List<Ticket> tickets, int accountId) throws WrongTicketException {
         try (Connection cn = pool.getConnection()) {
             try (PreparedStatement ps = cn.prepareStatement
                     ("INSERT INTO ticket (session_id, row, cell, account_id) values (?, ?, ?, ?)")
@@ -122,12 +142,10 @@ public class PsqlStore implements Store {
                 logger.error("Exception in addTickets()", ex);
                 logger.error("The transaction will be rolled back.");
                 cn.rollback();
-                result = false;
+                throw new WrongTicketException("These tickets are already sold out");
             }
         } catch (SQLException ex) {
             logger.error("Exception in addTickets()", ex);
-            result = false;
         }
-        return result;
     }
 }
